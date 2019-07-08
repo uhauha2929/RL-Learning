@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2019/7/2 20:04
 # @Author  : uhauha2929
-from typing import Union
-
 import gym
 import torch
 import torch.nn.functional as func
@@ -15,28 +13,6 @@ GAMMA = 0.95  # discount factor
 LEARNING_RATE = 0.005
 HIDDEN_DIM = 128
 
-
-class Policy(torch.nn.Module):
-    """
-    softmax network, 用来预测最优动作(策略)
-    """
-
-    def __init__(self, state_dim: int, hidden_dim: int, action_dim: int):
-        super().__init__()
-        self.state_dim = state_dim
-        self.hidden_dim = hidden_dim
-        self.action_dim = action_dim
-        self.feedforward = torch.nn.Sequential(
-            torch.nn.Linear(state_dim, hidden_dim),
-            torch.nn.ReLU(),
-            torch.nn.Linear(hidden_dim, action_dim),
-            torch.nn.Softmax(dim=-1)
-        )
-
-    def forward(self, state_input: torch.Tensor):
-        return self.feedforward(state_input)
-
-
 class PolicyGradient(object):
 
     def __init__(self, env):
@@ -46,8 +22,13 @@ class PolicyGradient(object):
         # 动作空间的维度, 2
         self.action_dim = env.action_space.n
         self.episode_observations, self.episode_actions, self.episode_rewards = [], [], []
-
-        self.policy = Policy(self.state_dim, HIDDEN_DIM, self.action_dim)
+        # softmax network, 用来预测最优动作(策略)
+        self.policy = torch.nn.Sequential(
+            torch.nn.Linear(self.state_dim, HIDDEN_DIM),
+            torch.nn.ReLU(),
+            torch.nn.Linear(HIDDEN_DIM, self.action_dim),
+            torch.nn.Softmax(dim=-1)
+        )
 
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=LEARNING_RATE)
 
